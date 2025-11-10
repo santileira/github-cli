@@ -7,6 +7,7 @@ A command-line tool to monitor GitHub Pull Request status with interactive merge
 - 📊 Display detailed PR status including reviews, checks, and merge readiness
 - 🔄 Watch mode with auto-refresh every minute
 - 🔔 Desktop notifications (macOS) when PR is ready to merge
+- 📝 Interactive ready - type `ready` while watching to convert draft PR to ready for review
 - ⚡ Interactive merge - type `merge` while watching to squash and merge
 - ✅ Automatic verification of merge requirements
 - 🎨 Colored output with clickable links (in supported terminals)
@@ -41,7 +42,7 @@ Example:
 ./gh-cli status embrace-io/devops --pr 10646
 ```
 
-### Watch Mode with Interactive Merge
+### Watch Mode with Interactive Commands
 
 ```bash
 ./gh-cli status <owner/repo> --pr <pr-number> --watch
@@ -50,6 +51,7 @@ Example:
 In watch mode:
 - The status refreshes every minute
 - You'll get a notification when the PR is ready to merge
+- Type `ready` and press Enter to mark a draft PR as ready for review
 - Type `merge` and press Enter to merge the PR
 - The tool will verify readiness and perform a squash merge with auto-confirm
 
@@ -64,7 +66,18 @@ Example:
 ./gh-cli status <owner/repo> --author <username>
 ```
 
-## Merge Behavior
+## Interactive Commands
+
+### Ready Command
+
+When you type `ready` in watch mode (for draft PRs), the tool:
+
+1. ✅ Verifies the PR is in draft mode
+2. 📝 Marks the PR as ready for review using `gh pr ready`
+
+If the PR is already ready for review, it will show a warning.
+
+### Merge Command
 
 When you type `merge` in watch mode, the tool:
 

@@ -19,6 +19,7 @@ type PR struct {
 	Number         int    `json:"number"`
 	Title          string `json:"title"`
 	State          string `json:"state"`
+	Draft          bool   `json:"draft"`
 	HTMLURL        string `json:"html_url"`
 	Mergeable      *bool  `json:"mergeable"`
 	MergeableState string `json:"mergeable_state"` // "clean", "blocked", "dirty", "unstable", etc.
@@ -355,7 +356,11 @@ func main() {
 
 					if watch {
 						fmt.Println()
-						if ready {
+						if pr.Draft {
+							fmt.Println(color.YellowString("📝 PR is in DRAFT mode"))
+							fmt.Println(color.HiCyanString("Type 'ready' to mark it as ready for review"))
+							fmt.Println(color.HiCyanString("Type 'merge' to attempt merge anyway"))
+						} else if ready {
 							fmt.Println(color.HiGreenString("🎉 PR is READY to merge!"))
 							fmt.Println(color.HiCyanString("Type 'merge' to merge now"))
 						} else {
@@ -428,6 +433,35 @@ func main() {
 
 					fmt.Println(color.HiGreenString("✅ Squash merge completed successfully!"))
 					return nil
+				} else if strings.ToLower(cmd) == "ready" {
+					// Fetch latest PR state
+					var pr PR
+					if err := getJSON(fmt.Sprintf("https://api.github.com/repos/%s/pulls/%s", repo, prNum), token, &pr); err != nil {
+						fmt.Println(color.HiRedString("❌ Error fetching PR: %v", err))
+						time.Sleep(3 * time.Second)
+						continue
+					}
+
+					// Check if PR is a draft
+					if !pr.Draft {
+						fmt.Println(color.HiYellowString("\n⚠️  PR is already ready for review (not a draft)"))
+						time.Sleep(3 * time.Second)
+						continue
+					}
+
+					// Execute ready command
+					fmt.Println(color.HiGreenString("\n✅ Marking PR #%d as ready for review...", pr.Number))
+					readyCmd := exec.Command("gh", "pr", "ready", prNum, "--repo", repo)
+					readyCmd.Stdout = os.Stdout
+					readyCmd.Stderr = os.Stderr
+					if err := readyCmd.Run(); err != nil {
+						fmt.Println(color.HiRedString("❌ Failed to mark PR as ready: %v", err))
+						time.Sleep(3 * time.Second)
+						continue
+					}
+
+					fmt.Println(color.HiGreenString("✅ PR is now ready for review!"))
+					time.Sleep(2 * time.Second)
 				}
 			case <-time.After(time.Minute):
 				// Continue to next iteration
